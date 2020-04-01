@@ -42,6 +42,8 @@ namespace MinecraftServerDaemon.Services
             _startInfo = new ProcessStartInfo
             {
                 FileName = $"{options.Value.ServerDirectory}/{options.Value.ServerExecutable}",
+                WorkingDirectory = options.Value.ServerDirectory,
+                UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
@@ -70,10 +72,22 @@ namespace MinecraftServerDaemon.Services
 
             _process.Exited += OnProcessExited;
             _process.OutputDataReceived += Process_OutputDataReceived;
+            _process.ErrorDataReceived += Process_ErrorDataReceived;
 
             _processOutput.Clear();
             bool started = _process.Start();
-            ServerProcessStatus = started ? MinecraftServerProcessStatus.Running : MinecraftServerProcessStatus.Error;
+            if (started) {
+                ServerProcessStatus = MinecraftServerProcessStatus.Running;
+                _process.BeginErrorReadLine();
+                _process.BeginOutputReadLine();
+            } else {
+                ServerProcessStatus = MinecraftServerProcessStatus.Error;
+            }
+        }
+
+        private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            _logger.LogError($"[stderr]:{e.Data.Trim()}");
         }
 
         private readonly List<string> _processOutput = new List<string>();
@@ -92,17 +106,17 @@ namespace MinecraftServerDaemon.Services
         public int MaxPlayers { get; private set; }
         public int OnlinePlayers { get; private set; }
 
-        private const string RegexStrPlayersOnline = "There are (\\d+)/(\\d+) players online:\\n";
+        private const string RegexStrPlayersOnline = @"There are (?<online>\d+)/(?<max>\d+) players online:";
         private static readonly Regex RegexPlayersOnline = new Regex(RegexStrPlayersOnline, RegexOptions.Compiled);
         private Timer _timer;
 
         private void ProcessOutput(string output)
         {
-            var matches = RegexPlayersOnline.Matches(output);
-            if (matches.Count == 2)
-            {
-                OnlinePlayers = int.Parse(matches[0].Value);
-                MaxPlayers = int.Parse(matches[1].Value);
+            var match = RegexPlayersOnline.Match(output);
+            //var matches = Regex.Matches(output, RegexPlayersOnline);
+            if (match.Success) {
+                OnlinePlayers = int.Parse(match.Groups["online"].Value);
+                MaxPlayers = int.Parse(match.Groups["max"].Value);
             }
         }
 
