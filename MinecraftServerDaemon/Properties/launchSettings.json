@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "MinecraftServerDaemon": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
