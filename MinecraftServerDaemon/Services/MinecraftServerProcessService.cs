@@ -11,7 +11,7 @@ using MinecraftServerDaemon.Settings;
 
 namespace MinecraftServerDaemon.Services
 {
-    public class MinecraftServerProcessService 
+    public class MinecraftServerProcessService
     {
         public enum MinecraftServerStatus
         {
@@ -76,20 +76,26 @@ namespace MinecraftServerDaemon.Services
 
             _processOutput.Clear();
             bool started = _process.Start();
-            if (started) {
+            if (started)
+            {
                 ServerStatus = MinecraftServerStatus.Running;
                 _process.BeginErrorReadLine();
                 _process.BeginOutputReadLine();
 
                 _timer = new Timer(PeriodicTasks, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-            } else {
+            }
+            else
+            {
                 ServerStatus = MinecraftServerStatus.Error;
             }
         }
 
         private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            _logger.LogError($"[stderr]:{e.Data.Trim()}");
+            if (!string.IsNullOrWhiteSpace(e.Data))
+            {
+                _logger.LogError($"[stderr]:{e.Data.Trim()}");
+            }
         }
 
         private readonly List<string> _processOutput = new List<string>();
@@ -100,9 +106,8 @@ namespace MinecraftServerDaemon.Services
             {
                 _processOutput.Add(e.Data);
                 ProcessOutput(e.Data);
+                _logger.LogInformation($"[stdout]:{e.Data.Trim()}");
             }
-
-            _logger.LogInformation($"[stdout]:{e.Data.Trim()}");
         }
 
         public int MaxPlayers { get; private set; }
@@ -116,7 +121,8 @@ namespace MinecraftServerDaemon.Services
         {
             var match = RegexPlayersOnline.Match(output);
             //var matches = Regex.Matches(output, RegexPlayersOnline);
-            if (match.Success) {
+            if (match.Success)
+            {
                 OnlinePlayers = int.Parse(match.Groups["online"].Value);
                 MaxPlayers = int.Parse(match.Groups["max"].Value);
             }
