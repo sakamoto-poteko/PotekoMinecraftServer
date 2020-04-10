@@ -11,32 +11,32 @@ using MinecraftServerDaemon.Settings;
 
 namespace MinecraftServerDaemon.Services
 {
-    public enum MinecraftServerProcessStatus
+    public class MinecraftServerProcessService 
     {
-        Running,
-        Stopping,
-        Stopped,
-        Error,
-        Starting
-    }
+        public enum MinecraftServerStatus
+        {
+            Stopped,
+            Starting,
+            Running,
+            Stopping,
+            Error
+        }
 
-    public enum MinecraftServerCommand
-    {
-        Stop,
-        List,
-    }
+        public enum MinecraftServerCommand
+        {
+            Stop,
+            List,
+        }
 
-    public class MinecraftServerProcessService : IHostedService
-    {
         private readonly ILogger<MinecraftServerProcessService> _logger;
         private Process _process;
         private readonly object _processLock = new object();
         private readonly ProcessStartInfo _startInfo;
 
-        public MinecraftServerProcessStatus ServerProcessStatus { get; private set; } =
-            MinecraftServerProcessStatus.Stopped;
+        public MinecraftServerStatus ServerStatus { get; private set; } =
+            MinecraftServerStatus.Stopped;
 
-        public MinecraftServerProcessService(IOptions<ServerInfo> options, ILogger<MinecraftServerProcessService> logger)
+        public MinecraftServerProcessService(IOptions<MinecraftServerInfo> options, ILogger<MinecraftServerProcessService> logger)
         {
             _logger = logger;
             _startInfo = new ProcessStartInfo
@@ -56,12 +56,12 @@ namespace MinecraftServerDaemon.Services
         {
             lock (_processLock)
             {
-                if (ServerProcessStatus != MinecraftServerProcessStatus.Stopped)
+                if (ServerStatus != MinecraftServerStatus.Stopped)
                 {
                     return;
                 }
 
-                ServerProcessStatus = MinecraftServerProcessStatus.Starting;
+                ServerStatus = MinecraftServerStatus.Starting;
             }
 
             _process = new Process
@@ -77,11 +77,13 @@ namespace MinecraftServerDaemon.Services
             _processOutput.Clear();
             bool started = _process.Start();
             if (started) {
-                ServerProcessStatus = MinecraftServerProcessStatus.Running;
+                ServerStatus = MinecraftServerStatus.Running;
                 _process.BeginErrorReadLine();
                 _process.BeginOutputReadLine();
+
+                _timer = new Timer(PeriodicTasks, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
             } else {
-                ServerProcessStatus = MinecraftServerProcessStatus.Error;
+                ServerStatus = MinecraftServerStatus.Error;
             }
         }
 
@@ -124,7 +126,7 @@ namespace MinecraftServerDaemon.Services
         {
             lock (_processLock)
             {
-                ServerProcessStatus = MinecraftServerProcessStatus.Stopped;
+                ServerStatus = MinecraftServerStatus.Stopped;
                 _process = null;
             }
 
@@ -135,14 +137,15 @@ namespace MinecraftServerDaemon.Services
         {
             lock (_processLock)
             {
-                if (ServerProcessStatus != MinecraftServerProcessStatus.Running)
+                if (ServerStatus != MinecraftServerStatus.Running)
                 {
                     return;
                 }
 
-                ServerProcessStatus = MinecraftServerProcessStatus.Stopping;
+                ServerStatus = MinecraftServerStatus.Stopping;
             }
 
+            _timer?.Change(Timeout.Infinite, 0);
             if (gracefully)
             {
                 _process.StandardInput.WriteLine("stop");
@@ -157,7 +160,7 @@ namespace MinecraftServerDaemon.Services
         {
             lock (_processLock)
             {
-                if (ServerProcessStatus != MinecraftServerProcessStatus.Stopping)
+                if (ServerStatus != MinecraftServerStatus.Stopping)
                     return Task.FromResult(false);
             }
 
@@ -182,7 +185,7 @@ namespace MinecraftServerDaemon.Services
 
         public bool ExecuteCommand(MinecraftServerCommand command)
         {
-            if (ServerProcessStatus != MinecraftServerProcessStatus.Running)
+            if (ServerStatus != MinecraftServerStatus.Running)
                 return false;
 
             switch (command)
@@ -208,26 +211,6 @@ namespace MinecraftServerDaemon.Services
         private void PeriodicTasks(object state)
         {
             CheckPlayers();
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            Start();
-
-            _timer = new Timer(PeriodicTasks, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-
-            return Task.CompletedTask;
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            _timer?.Change(Timeout.Infinite, 0);
-            Stop(true);
-            await WaitForProcessExitAsync(5000);
-            if (ServerProcessStatus != MinecraftServerProcessStatus.Stopped)
-            {
-                Stop(false);
-            }
         }
     }
 }

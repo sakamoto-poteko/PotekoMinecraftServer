@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MinecraftServerDaemon.Settings
 {
-    public class ServerInfo
+    public class MinecraftServerInfo
     {
         public string ServerDirectory { get; set; }
         public string ServerExecutable { get; set; }

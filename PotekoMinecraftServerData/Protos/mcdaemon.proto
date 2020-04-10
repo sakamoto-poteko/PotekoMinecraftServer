@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option csharp_namespace = "PotekoProtos";
+
+package mcdaemon;
+
+// The greeting service definition.
+
+/*
+service DaemonService {
+}
+*/
+
+service MinecraftServerSerivce {
+	rpc GetStatus(MinecraftServerGetStatusRequest) returns (MinecraftServerGetStatusReply);
+	rpc Operation(MinecraftServerOperationRequest) returns (MinecraftServerOperationReply);
+	rpc ListUser(MinecraftServerListUserRequest) returns (MinecraftServerListUserReply);
+}
+
+enum MinecraftServerStatus {
+	STOPPED = 0;
+	RUNNING = 1;
+	ERROR = 2;
+}
+
+message MinecraftServerGetStatusRequest {
+}
+
+message MinecraftServerGetStatusReply {
+	MinecraftServerStatus status = 1;
+}
+
+
+enum MinecraftServerOperation {
+	START = 0;
+	STOP = 1;
+}
+
+message MinecraftServerOperationRequest {
+	MinecraftServerOperation operation = 1;
+}
+
+message MinecraftServerOperationReply {
+	bool completed = 1;
+	string errorMessage = 2;
+}
+
+
+message MinecraftServerListUserRequest {
+}
+
+message MinecraftServerListUserReply {
+	int32 online = 1;
+	int32 max = 2;
+	repeated string users = 3;
+}

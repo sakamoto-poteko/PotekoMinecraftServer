@@ -8,7 +8,7 @@ using MinecraftServerDaemon.Services;
 
 namespace MinecraftServerDaemon
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -17,12 +17,17 @@ namespace MinecraftServerDaemon
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    var configuration = hostContext.Configuration;
-                    services.Configure<Settings.ServerInfo>(configuration.GetSection("ServerInfo"));
+                .ConfigureServices(ConfigureServices);
 
-                    services.AddHostedService<MinecraftServerProcessService>();
-                });
+        public static void ConfigureServices(HostBuilderContext ctx, IServiceCollection services)
+        {
+            var configuration = ctx.Configuration;
+            services.Configure<Settings.MinecraftServerInfo>(configuration.GetSection("MinecraftServerInfo"));
+            services.Configure<Settings.GrpcServerInfo>(configuration.GetSection("GrpcServerInfo"));
+
+            services.AddSingleton<MinecraftServerProcessService>();
+            services.AddSingleton<MinecraftServerServiceImpl>();
+            services.AddHostedService<GrpcServer>();
+        }
     }
 }
