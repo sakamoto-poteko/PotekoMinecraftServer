@@ -69,7 +69,6 @@ namespace PotekoMinecraftServer.Services
         {
             var m = GetMachine(name);
             var vm = await _azure.VirtualMachines.GetByResourceGroupAsync(m.resourceGroup, m.machineName);
-            _logger.LogInformation(vm.PowerState.Value);
             return vm.PowerState.Value switch
             {
                 "PowerState/running" => MachinePowerState.Running,

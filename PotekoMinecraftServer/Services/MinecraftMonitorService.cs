@@ -105,10 +105,11 @@ namespace PotekoMinecraftServer.Services
 
         private async Task CheckShutdownNeededAsync(string name)
         {
+            var status = _serverStatus[name].MinecraftBdsStatus;
             if (DateTime.UtcNow - _serverHasPlayerLastTimestamp[name] >
-                TimeSpan.FromMinutes(_idleServerShutdownInterval))
+                    TimeSpan.FromMinutes(_idleServerShutdownInterval) &&
+                    status != MinecraftBdsStatus.LocalError)
             {
-                var status = _serverStatus[name].MinecraftBdsStatus;
                 if (status == MinecraftBdsStatus.Running)
                 {
                     await _minecraftServerDaemonService.StopServerAsync(name);
@@ -124,7 +125,8 @@ namespace PotekoMinecraftServer.Services
         {
             var mStatus = _machineStatus[name].PowerState;
             if (DateTime.UtcNow - _serverRunningLastTimestamp[name] >
-                        TimeSpan.FromMinutes(_serverPowerOffInterval))
+                        TimeSpan.FromMinutes(_serverPowerOffInterval)
+                        && mStatus != MachinePowerState.Error)
             {
                 if (mStatus == MachinePowerState.Running)
                 {
@@ -141,7 +143,8 @@ namespace PotekoMinecraftServer.Services
         {
             var mStatus = _machineStatus[name].PowerState;
             if (DateTime.UtcNow - _machineRunningLastTimestamp[name] >
-                        TimeSpan.FromMinutes(_serverDeallocateInterval))
+                        TimeSpan.FromMinutes(_serverDeallocateInterval)
+                        && mStatus != MachinePowerState.Error)
             {
                 if (mStatus == MachinePowerState.Stopped)
                 {
@@ -166,11 +169,13 @@ namespace PotekoMinecraftServer.Services
             m.PowerState = mStatus;
             if (mStatus == MachinePowerState.Running)
             {
+                _machineRunningLastTimestamp[name] = DateTime.UtcNow;
                 var sStatus = await _minecraftServerDaemonService.GetServerStatusAsync(name);
                 s.MinecraftBdsStatus = sStatus;
 
                 if (sStatus == MinecraftBdsStatus.Running)
                 {
+                    _serverRunningLastTimestamp[name] = DateTime.UtcNow;
                     var sPlayers = await _minecraftServerDaemonService.ListPlayersAsync(name);
                     s.Max = sPlayers.Max;
                     s.Online = sPlayers.Online;

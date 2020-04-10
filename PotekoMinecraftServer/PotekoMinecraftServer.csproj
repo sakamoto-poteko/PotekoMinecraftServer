@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Scripts\HomeIndex.ts" />
     <None Remove="Scripts\mcstatus-subscribe.ts" />
   </ItemGroup>
 

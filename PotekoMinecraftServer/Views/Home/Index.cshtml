@@ -7,34 +7,48 @@
     <p class="h4">Current server status</p>
     <div class="container">
         <div id="status-table">
-            <div class="row font-weight-bold">
-                <div class="col-1">Server</div>
-                <div class="col-1">Machine</div>
-                <div class="col-1">Server</div>
-                <div class="col-1">Online</div>
-                <div class="col-1">Max</div>
-                <div class="col-2">Action</div>
-            </div>
-
-            @for (int i = 0; i < Model.Count; i++)
-            {
-                var serverName = Model[i];
-                var rowBg = i / 2 == 0 ? "bg-light" : "bg-white";
-                <div id="row-1-@serverName" class="row align-items-center @rowBg">
-                    <div id="display-name-@serverName" class="col-1" data-class="">@serverName</div>
-                    <div id="display-machinestate-@serverName" class="col-1" data-class=""></div>
-                    <div id="display-serverstate-@serverName" class="col-1" data-class=""></div>
-                    <div id="display-online-@serverName" class="col-1" data-class=""></div>
-                    <div id="display-max-@serverName" class="col-1" data-class=""></div>
-                    <div class="col-2"><a id="btn-start-@serverName">Start</a></div>
-                </div>
-                <div id="row-2-@serverName" class="row @rowBg">
-                    <div id="display-timestamp-@serverName" class="col-12" data-class=""></div>
-                </div>
-            }
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th class="col">Server</th>
+                        <th class="col">Machine</th>
+                        <th class="col">Server</th>
+                        <th class="col">Online</th>
+                        <th class="col">Max</th>
+                        <th class="col" colspan="3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        var serverName = Model[i];
+                        var rowBg = i / 2 == 0 ? "bg-white" : "bg-light";
+                        <tr id="row-1-@serverName" class="@rowBg">
+                            <td id="display-name-@serverName" class="col align-middle">@serverName</td>
+                            <td id="display-machinestate-@serverName" class="col text-center align-middle"></td>
+                            <td id="display-serverstate-@serverName" class="col text-center align-middle"></td>
+                            <td id="display-online-@serverName" class="col text-center align-middle"></td>
+                            <td id="display-max-@serverName" class="col text-center align-middle"></td>
+                            <td class="col">
+                                <button id="btn-start-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-start" data-server-name="@serverName">Start MC</button>
+                            </td>
+                            <td class="col">
+                                <button id="btn-stop-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-stop" data-server-name="@serverName">Stop MC</button>
+                            </td>
+                            <td class="col">
+                                <button id="btn-start-machine-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-machine-start" data-server-name="@serverName">Start Machine</button>
+                            </td>
+                        </tr>
+                        <tr id="row-2-@serverName" class="@rowBg">
+                            <td id="display-timestamp-@serverName" class="col" data-class="" colspan="8"></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script src="~/lib/signalr/signalr.min.js"></script>
     <script src="~/js/ts/mcstatus-subscribe.js"></script>
+    <script src="~/js/ts/HomeIndex.js"></script>
 </div>

@@ -5,7 +5,8 @@
     "removeComments": false,
     "sourceMap": true,
     "target": "es5",
-    "outDir": "../wwwroot/js/ts"
+    "outDir": "../wwwroot/js/ts",
+    "isolatedModules": true
   },
   "exclude": [
     "node_modules",

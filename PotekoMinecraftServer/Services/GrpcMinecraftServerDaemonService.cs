@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -25,7 +26,19 @@ namespace PotekoMinecraftServer.Services
 
             foreach (var srv in settings.Endpoints)
             {
-                var channel = GrpcChannel.ForAddress(srv.ServerAddress);
+                // BUG: add settings accepts any cert
+                var httpClientHandler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                // Return `true` to allow certificates that are untrusted/invalid
+                var httpClient = new HttpClient(httpClientHandler);
+
+                var channel = GrpcChannel.ForAddress(srv.ServerAddress, new GrpcChannelOptions
+                {
+                     HttpClient = httpClient
+                });
+
                 var client = new MinecraftServerSerivce.MinecraftServerSerivceClient(channel);
                 _clients.Add(srv.Name, client);
             }
@@ -108,7 +121,7 @@ namespace PotekoMinecraftServer.Services
             catch (RpcException e)
             {
                 _logger.LogError($"GRPC call error for server {name}: {e.Message}");
-                return MinecraftBdsStatus.Error;
+                return MinecraftBdsStatus.LocalError;
             }
         }
     }
