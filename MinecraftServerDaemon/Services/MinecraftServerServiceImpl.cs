@@ -46,7 +46,7 @@ namespace MinecraftServerDaemon.Services
 
         public override async Task<MinecraftServerOperationReply> Operation(MinecraftServerOperationRequest request, ServerCallContext context)
         {
-            _logger.LogInformation("Operation");
+            _logger.LogInformation($"Operation {request.Operation.ToString()}");
             switch (request.Operation)
             {
                 case MinecraftServerOperation.Start:
