@@ -4,10 +4,15 @@ import type { } from "jquery";
 declare var exports;
 const signalR = exports.signalR;
 
+interface ResultResponse {
+    result: boolean;
+    message: string;
+}
 
 enum MinecraftBdsStatus {
     Stopped = 0,
     Running = 1,
+    NetworkError = 0xFD,
     LocalError = 0xFE,
     Error = 0xFF,
 }
@@ -54,15 +59,22 @@ function neverReach(): never {
     throw new Error("not expected to get here!");
 }
 
+enum DisplayClasses {
+    Success = "table-success",
+    Warning = "table-warning",
+    Failure = "table-danger",
+}
+
 function getMinecraftBdsStatusClasses(status: MinecraftBdsStatus): string[] {
     switch (status) {
         case MinecraftBdsStatus.Error:
         case MinecraftBdsStatus.LocalError:
-            return ["table-danger"];
+        case MinecraftBdsStatus.NetworkError:
+            return [DisplayClasses.Failure];
         case MinecraftBdsStatus.Running:
-            return ["table-success"];
+            return [DisplayClasses.Success];
         case MinecraftBdsStatus.Stopped:
-            return ["table-warning"];
+            return [DisplayClasses.Warning];
         default:
             return neverReach();
     }
@@ -75,12 +87,12 @@ function getPowerStateClasses(powerState: MachinePowerState): string[] {
         case MachinePowerState.Starting:
         case MachinePowerState.Stopped:
         case MachinePowerState.Stopping:
-            return ["table-warning"];
+            return [DisplayClasses.Warning];
         case MachinePowerState.Running:
-            return ["table-success"];
+            return [DisplayClasses.Success];
         case MachinePowerState.LocalError:
         case MachinePowerState.Error:
-            return ["table-danger"];
+            return [DisplayClasses.Failure];
         default:
             return neverReach();
     }
@@ -101,6 +113,29 @@ function updateElementClasses(element: JQuery<HTMLElement>, classes: string[]) {
     element.addClass(classes);
 }
 
+function setAsNa(element: JQuery<HTMLElement>, hideFailureBackground?: boolean): void {
+    element.html("N/A");
+
+    if (!hideFailureBackground) {
+        updateElementClasses(element, [DisplayClasses.Failure]);
+    }
+}
+
+function setContent(element: JQuery<HTMLElement>, content: string, classes?: string[]) {
+    element.html(content);
+    if (classes) {
+        updateElementClasses(element, classes);
+    }
+}
+
+function setButtonDisabled(element: JQuery<HTMLElement>, disabled: boolean) {
+    if (disabled) {
+        element.attr("disabled", "true");
+    } else {
+        element.removeAttr("disabled");
+    }
+}
+
 function updateServerEntry(entry: MinecraftEndpointStatus): void {
     const name = entry.name;
     const machineStateDiv = $(`#display-machinestate-${name}`);
@@ -109,27 +144,87 @@ function updateServerEntry(entry: MinecraftEndpointStatus): void {
     const maxDiv = $(`#display-max-${name}`);
     const timestampDiv = $(`#display-timestamp-${name}`);
 
-    machineStateDiv.html(machinePowerStateToString(entry.machineStatus.powerState));
-    const machineStateClasses = getPowerStateClasses(entry.machineStatus.powerState);
-    updateElementClasses(machineStateDiv, machineStateClasses);
+    setContent(
+        machineStateDiv,
+        machinePowerStateToString(entry.machineStatus.powerState),
+        getPowerStateClasses(entry.machineStatus.powerState));
 
-    serverStateDiv.html(bdsStatusToString(entry.serverStatus.minecraftBdsStatus));
-    const serverStateClasses = getMinecraftBdsStatusClasses(entry.serverStatus.minecraftBdsStatus);
-    updateElementClasses(serverStateDiv, serverStateClasses);
+    if (entry.machineStatus.powerState === MachinePowerState.Running) {
+        const bdsStatus = entry.serverStatus.minecraftBdsStatus;
+        setContent(serverStateDiv,
+            bdsStatusToString(bdsStatus),
+            getMinecraftBdsStatusClasses(bdsStatus));
 
-    const online = entry.serverStatus.online;
-    onlineDiv.html(entry.serverStatus.online.toString());
-    if (online > 0) {
-        updateElementClasses(onlineDiv, ["text-success"]);
+        if (bdsStatus === MinecraftBdsStatus.Running) {
+            const online = entry.serverStatus.online;
+            setContent(onlineDiv, online.toString(), online > 0 ? ["text-success"] : []);
+            setContent(maxDiv, entry.serverStatus.max.toString(), []);
+        } else {
+            setAsNa(onlineDiv);
+            setAsNa(maxDiv);
+        }
     } else {
-        updateElementClasses(onlineDiv, []);
+        setAsNa(serverStateDiv);
+        setAsNa(onlineDiv);
+        setAsNa(maxDiv);
     }
-
-    maxDiv.html(entry.serverStatus.max.toString());
 
     const date = new Date(entry.machineStatus.timestamp);
     timestampDiv.html(`Updated on ${date}`);
 }
+
+function alertResponse(response: ResultResponse, operation?: string): void {
+    let content: string;
+    const op = operation ? operation : "Operation";
+
+    if (response.result) {
+        content = `${op} executed successfully!`;
+    } else {
+        if (response.message) {
+            content = `${op} failed: ${response.message}`;
+        } else {
+            content = `${op} failed`;
+        }
+    }
+
+    const alert = `<div class="alert ${response.result ? "alert-success" : "alert-danger"} alert-dismissible fade show" role="alert">${content}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`;
+
+    $("#status-table-alert-container").prepend(alert);
+}
+
+function onButtonStartStopClicked(action: string, button): void {
+    const serverName = button.attr("data-server-name");
+    setButtonDisabled(button, true);
+    $.post(`/home/${action}Server?name=${serverName}`, (data) => {
+        alertResponse(data, `${action} minecraft server on "${serverName}"`);
+        setButtonDisabled(button, false);
+    });
+}
+
+function onButtonMachineStartClicked(button): void {
+    const serverName = button.attr("data-server-name");
+    setButtonDisabled(button, true);
+    $.post(`/home/StartMachine?name=${serverName}`, (data) => {
+        alertResponse(data, `Start machine "${serverName}"`);
+        setButtonDisabled(button, false);
+    });
+}
+
+function bindButtonClickEvents(): void {
+    $(".btn-machine-start").on("click", function () {
+        onButtonMachineStartClicked($(this));
+    });
+
+    $(".btn-server-start").on("click", function () {
+        onButtonStartStopClicked("Start", $(this));
+    });
+
+    $(".btn-server-stop").on("click", function () {
+        onButtonStartStopClicked("Stop", $(this));
+    });
+}
+
+bindButtonClickEvents();
 
 const connection = new signalR.HubConnectionBuilder().withUrl("/mcstatus").build();
 

@@ -133,6 +133,8 @@ namespace MinecraftServerDaemon.Services
             lock (_processLock)
             {
                 ServerStatus = MinecraftServerStatus.Stopped;
+                _process.OutputDataReceived -= Process_OutputDataReceived;
+                _process.ErrorDataReceived -= Process_ErrorDataReceived;
                 _process = null;
             }
 

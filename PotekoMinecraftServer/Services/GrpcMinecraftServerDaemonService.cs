@@ -66,18 +66,26 @@ namespace PotekoMinecraftServer.Services
 
         private async Task<bool> DaemonOperationAsync(string name, MinecraftServerOperation operation)
         {
-            var result = await GetClient(name).OperationAsync(new MinecraftServerOperationRequest
+            try
             {
-                Operation = operation
-            });
+                var result = await GetClient(name).OperationAsync(new MinecraftServerOperationRequest
+                {
+                    Operation = operation
+                });
 
-            if (result.Completed)
-            {
-                return true;
+                if (result.Completed)
+                {
+                    return true;
+                }
+                else
+                {
+                    _logger.LogError($"MC server operation `{operation}' failed: {result.ErrorMessage}");
+                    return false;
+                }
             }
-            else
+            catch (RpcException e)
             {
-                _logger.LogError($"MC server operation `{operation}' failed: {result.ErrorMessage}");
+                _logger.LogError($"OperationAsync error for server {name}: {e.Message}");
                 return false;
             }
         }
@@ -96,7 +104,7 @@ namespace PotekoMinecraftServer.Services
             }
             catch (RpcException e)
             {
-                _logger.LogError($"GRPC call error for server {name}: {e.Message}");
+                _logger.LogError($"ListUserAsync error for server {name}: {e.Message}");
                 return new OnlinePlayers
                 {
                     Max = 0,
@@ -120,8 +128,8 @@ namespace PotekoMinecraftServer.Services
             }
             catch (RpcException e)
             {
-                _logger.LogError($"GRPC call error for server {name}: {e.Message}");
-                return MinecraftBdsStatus.LocalError;
+                _logger.LogError($"GetStatusAsyncError for server {name}: {e.Message}");
+                return MinecraftBdsStatus.NetworkError;
             }
         }
     }

@@ -1,10 +1,12 @@
 ﻿@model List<string>
 @{
     ViewData["Title"] = "Home Page";
+    var isPlayer = User.IsInRole(UserRoles.Player);
 }
 
 <div>
     <p class="h4">Current server status</p>
+    <div id="status-table-alert-container" class="container w-100"></div>
     <div class="container">
         <div id="status-table">
             <table class="table table-bordered">
@@ -15,7 +17,10 @@
                         <th class="col">Server</th>
                         <th class="col">Online</th>
                         <th class="col">Max</th>
-                        <th class="col" colspan="3">Actions</th>
+                        @if (isPlayer)
+                        {
+                            <th class="col" colspan="3">Actions</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -29,18 +34,21 @@
                             <td id="display-serverstate-@serverName" class="col text-center align-middle"></td>
                             <td id="display-online-@serverName" class="col text-center align-middle"></td>
                             <td id="display-max-@serverName" class="col text-center align-middle"></td>
-                            <td class="col">
-                                <button id="btn-start-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-start" data-server-name="@serverName">Start MC</button>
-                            </td>
-                            <td class="col">
-                                <button id="btn-stop-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-stop" data-server-name="@serverName">Stop MC</button>
-                            </td>
-                            <td class="col">
-                                <button id="btn-start-machine-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-machine-start" data-server-name="@serverName">Start Machine</button>
-                            </td>
+                            @if (isPlayer)
+                            {
+                                <td class="col">
+                                    <button id="btn-start-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-start" data-server-name="@serverName">Start MC</button>
+                                </td>
+                                <td class="col">
+                                    <button id="btn-stop-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-server-stop" data-server-name="@serverName">Stop MC</button>
+                                </td>
+                                <td class="col">
+                                    <button id="btn-start-machine-@serverName" type="button" class="btn btn-sm btn-primary text-nowrap btn-machine-start" data-server-name="@serverName">Start Machine</button>
+                                </td>
+                            }
                         </tr>
                         <tr id="row-2-@serverName" class="@rowBg">
-                            <td id="display-timestamp-@serverName" class="col" data-class="" colspan="8"></td>
+                            <td id="display-timestamp-@serverName" class="col" data-class="" colspan="@(isPlayer ? 8 : 5)"></td>
                         </tr>
                     }
                 </tbody>
@@ -50,5 +58,4 @@
 
     <script src="~/lib/signalr/signalr.min.js"></script>
     <script src="~/js/ts/mcstatus-subscribe.js"></script>
-    <script src="~/js/ts/HomeIndex.js"></script>
 </div>

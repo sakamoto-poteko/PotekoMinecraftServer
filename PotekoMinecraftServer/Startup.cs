@@ -18,8 +18,11 @@ namespace PotekoMinecraftServer
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _env;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
+            _env = env;
             Configuration = configuration;
         }
 
@@ -40,11 +43,31 @@ namespace PotekoMinecraftServer
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            services.AddDefaultIdentity<IdentityUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.SignIn.RequireConfirmedEmail = false;
+                })
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
-            services.AddControllersWithViews();
+
+            if (_env.IsDevelopment())
+            {
+                services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            }
+            else
+            {
+                services.AddControllersWithViews();
+            }
+
             services.AddRazorPages();
             services.AddSignalR();
+
+            services.AddAuthentication().AddMicrosoftAccount(microsoftOptions =>
+            {
+                microsoftOptions.ClientId = Configuration["Authentication:Microsoft:ClientId"];
+                microsoftOptions.ClientSecret = Configuration["Authentication:Microsoft:ClientSecret"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

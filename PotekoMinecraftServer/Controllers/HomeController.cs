@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PotekoMinecraftServer.Models;
@@ -18,8 +19,8 @@ namespace PotekoMinecraftServer.Controllers
         private readonly IMinecraftMachineService _minecraftMachineService;
 
 
-        public HomeController(ILogger<HomeController> logger, 
-            IMinecraftMonitorService monitorService, 
+        public HomeController(ILogger<HomeController> logger,
+            IMinecraftMonitorService monitorService,
             IMinecraftServerDaemonService minecraftServerDaemonService,
             IMinecraftMachineService minecraftMachineService)
         {
@@ -67,12 +68,13 @@ namespace PotekoMinecraftServer.Controllers
                     return NotFound();
             }
 
-            return Ok(new
+            return Ok(new ResultResponse
             {
-                Completed = finished
+                Result = finished
             });
         }
 
+        [Authorize(Roles = UserRoles.Player)]
         [HttpPost]
         public async Task<IActionResult> StartMachine([FromQuery] string name)
         {
@@ -83,9 +85,13 @@ namespace PotekoMinecraftServer.Controllers
 
             await _minecraftMachineService.StartAsync(name);
 
-            return Ok();
+            return Ok(new ResultResponse
+            {
+                Result = true
+            });
         }
 
+        [Authorize(Roles = UserRoles.Player)]
         [HttpPost]
         public async Task<IActionResult> StartServer([FromQuery] string name)
         {
@@ -98,6 +104,7 @@ namespace PotekoMinecraftServer.Controllers
         }
 
 
+        [Authorize(Roles = UserRoles.Player)]
         [HttpPost]
         public async Task<IActionResult> StopServer([FromQuery] string name)
         {

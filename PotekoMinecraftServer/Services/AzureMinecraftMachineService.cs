@@ -30,9 +30,23 @@ namespace PotekoMinecraftServer.Services
                 _machines.Add(serverEntry.Name, (serverEntry.ResourceGroup, serverEntry.MachineName));
             }
 
-            var cred = new AzureCredentialsFactory().FromServicePrincipal(settings.AzureClientId,
-                settings.AzureKey, settings.AzureTenantId, AzureEnvironment.AzureGlobalCloud);
-            _azure = Azure.Authenticate(cred).WithSubscription(settings.AzureSubscription);
+            AzureCredentials cred;
+            if (settings.AzureUseMsi && settings.AzureMsiType != Settings.AzureMsiType.Unknown)
+            {
+                var msiResourceType = settings.AzureMsiType switch
+                {
+                    Settings.AzureMsiType.AppService => MSIResourceType.AppService,
+                    Settings.AzureMsiType.VirtualMachine => MSIResourceType.VirtualMachine,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+                cred = new AzureCredentialsFactory().FromMSI(new MSILoginInformation(msiResourceType), AzureEnvironment.AzureGlobalCloud);
+            }
+            else
+            {
+                cred = new AzureCredentialsFactory().FromServicePrincipal(settings.AzureClientId,
+                    settings.AzureKey, settings.AzureTenantId, AzureEnvironment.AzureGlobalCloud);
+            }
+            _azure = Azure.Configure().Authenticate(cred).WithSubscription(settings.AzureSubscription);
         }
 
         private (string resourceGroup, string machineName) GetMachine(string name)
@@ -69,7 +83,7 @@ namespace PotekoMinecraftServer.Services
         {
             var m = GetMachine(name);
             var vm = await _azure.VirtualMachines.GetByResourceGroupAsync(m.resourceGroup, m.machineName);
-            return vm.PowerState.Value switch
+            return vm.PowerState?.Value switch
             {
                 "PowerState/running" => MachinePowerState.Running,
                 "PowerState/deallocating" => MachinePowerState.Deallocating,
@@ -78,6 +92,7 @@ namespace PotekoMinecraftServer.Services
                 "PowerState/stopped" => MachinePowerState.Stopped,
                 "PowerState/stopping" => MachinePowerState.Stopping,
                 "PowerState/unknown" => MachinePowerState.Error,
+                null => MachinePowerState.LocalError,
                 _ => throw new NotImplementedException($"PowerState value `{vm.PowerState.Value}' not implemented"),
             };
         }

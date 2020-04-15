@@ -26,13 +26,13 @@ namespace PotekoMinecraftServer.Services
             new Dictionary<string, MinecraftMachineStatus>();
 
         private readonly Dictionary<string, DateTime>
-            _serverHasPlayerLastTimestamp = new Dictionary<string, DateTime>();
+            _serverInactiveFirstTimestamp = new Dictionary<string, DateTime>();
 
         private readonly Dictionary<string, DateTime>
-            _serverRunningLastTimestamp = new Dictionary<string, DateTime>();
+            _serverStoppedFirstTimestamp = new Dictionary<string, DateTime>();
 
         private readonly Dictionary<string, DateTime>
-            _machineRunningLastTimestamp = new Dictionary<string, DateTime>();
+            _machineInactiveFirstTimestamp = new Dictionary<string, DateTime>();
 
         private readonly List<string> _machines;
         private readonly int _refreshInterval;
@@ -60,9 +60,9 @@ namespace PotekoMinecraftServer.Services
             {
                 _serverStatus.Add(name, new MinecraftServerStatus());
                 _machineStatus.Add(name, new MinecraftMachineStatus());
-                _serverHasPlayerLastTimestamp.Add(name, DateTime.MaxValue);
-                _serverRunningLastTimestamp.Add(name, DateTime.MaxValue);
-                _machineRunningLastTimestamp.Add(name, DateTime.MaxValue);
+                _serverInactiveFirstTimestamp.Add(name, DateTime.UtcNow);
+                _serverStoppedFirstTimestamp.Add(name, DateTime.UtcNow);
+                _machineInactiveFirstTimestamp.Add(name, DateTime.UtcNow);
             }
         }
 
@@ -70,7 +70,7 @@ namespace PotekoMinecraftServer.Services
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                foreach (var name in _machines)
+                var tasks = _machines.Select(async name =>
                 {
                     if (stoppingToken.IsCancellationRequested)
                         return;
@@ -78,7 +78,9 @@ namespace PotekoMinecraftServer.Services
                     await QueryServerAsync(name);
 
                     await CheckShutdownNeededAsync(name);
-                }
+                }).ToArray();
+                
+                await Task.WhenAll(tasks);
 
                 await BroadcastStatusAsync();
 
@@ -106,9 +108,9 @@ namespace PotekoMinecraftServer.Services
         private async Task CheckShutdownNeededAsync(string name)
         {
             var status = _serverStatus[name].MinecraftBdsStatus;
-            if (DateTime.UtcNow - _serverHasPlayerLastTimestamp[name] >
+            if (DateTime.UtcNow - _serverInactiveFirstTimestamp[name] >
                     TimeSpan.FromMinutes(_idleServerShutdownInterval) &&
-                    status != MinecraftBdsStatus.LocalError)
+                    !status.IsError())
             {
                 if (status == MinecraftBdsStatus.Running)
                 {
@@ -124,9 +126,9 @@ namespace PotekoMinecraftServer.Services
         private async Task CheckMachineStopNeededAsync(string name)
         {
             var mStatus = _machineStatus[name].PowerState;
-            if (DateTime.UtcNow - _serverRunningLastTimestamp[name] >
+            if (DateTime.UtcNow - _serverStoppedFirstTimestamp[name] >
                         TimeSpan.FromMinutes(_serverPowerOffInterval)
-                        && mStatus != MachinePowerState.Error)
+                        && !mStatus.IsError())
             {
                 if (mStatus == MachinePowerState.Running)
                 {
@@ -142,14 +144,37 @@ namespace PotekoMinecraftServer.Services
         private async Task CheckMachineDeallocateNeededAsync(string name)
         {
             var mStatus = _machineStatus[name].PowerState;
-            if (DateTime.UtcNow - _machineRunningLastTimestamp[name] >
+            if (DateTime.UtcNow - _machineInactiveFirstTimestamp[name] >
                         TimeSpan.FromMinutes(_serverDeallocateInterval)
-                        && mStatus != MachinePowerState.Error)
+                        && !mStatus.IsError())
             {
                 if (mStatus == MachinePowerState.Stopped)
                 {
                     await _minecraftMachineService.DeallocateAsync(name);
                 }
+            }
+        }
+
+        private void SetAsNever(IDictionary<string, DateTime> dict, string name)
+        {
+            dict[name] = DateTime.MaxValue;
+        }
+
+        private void SetAsNow(IDictionary<string, DateTime> dict, string name)
+        {
+            dict[name] = DateTime.UtcNow;
+        }
+
+        private bool IsNever(IDictionary<string, DateTime> dict, string name)
+        {
+            return dict[name] == DateTime.MaxValue;
+        }
+
+        private void SetAsNowIfIsNever(IDictionary<string, DateTime> dict, string name)
+        {
+            if (IsNever(dict, name))
+            {
+                SetAsNow(dict, name);
             }
         }
 
@@ -169,13 +194,25 @@ namespace PotekoMinecraftServer.Services
             m.PowerState = mStatus;
             if (mStatus == MachinePowerState.Running)
             {
-                _machineRunningLastTimestamp[name] = DateTime.UtcNow;
+                // if just turned on, set server stopped to now
+                if (!IsNever(_machineInactiveFirstTimestamp, name))
+                {
+                    SetAsNow(_serverStoppedFirstTimestamp, name);
+                }
+
+                SetAsNever(_machineInactiveFirstTimestamp, name);
                 var sStatus = await _minecraftServerDaemonService.GetServerStatusAsync(name);
                 s.MinecraftBdsStatus = sStatus;
 
                 if (sStatus == MinecraftBdsStatus.Running)
                 {
-                    _serverRunningLastTimestamp[name] = DateTime.UtcNow;
+                    if (!IsNever(_serverStoppedFirstTimestamp, name))
+                    {
+                        SetAsNow(_serverInactiveFirstTimestamp, name);
+                    }
+
+                    SetAsNever(_serverStoppedFirstTimestamp, name);
+
                     var sPlayers = await _minecraftServerDaemonService.ListPlayersAsync(name);
                     s.Max = sPlayers.Max;
                     s.Online = sPlayers.Online;
@@ -183,13 +220,23 @@ namespace PotekoMinecraftServer.Services
 
                     if (sPlayers.Online > 0)
                     {
-                        _serverHasPlayerLastTimestamp[name] = DateTime.UtcNow;
+                        SetAsNever(_serverInactiveFirstTimestamp, name);
                     }
+                    else
+                    {
+                        SetAsNowIfIsNever(_serverInactiveFirstTimestamp, name);
+                    }
+                }
+                else
+                {
+                    s.MinecraftBdsStatus = MinecraftBdsStatus.Stopped;
+
+                    SetAsNowIfIsNever(_serverStoppedFirstTimestamp, name);
                 }
             }
             else
             {
-                s.MinecraftBdsStatus = MinecraftBdsStatus.Stopped;
+                SetAsNowIfIsNever(_machineInactiveFirstTimestamp, name);
             }
 
             _machineStatus[name] = m;

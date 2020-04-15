@@ -16,28 +16,38 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.11.4" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.27.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.28.0" />
     <PackageReference Include="Grpc.Tools" Version="2.28.1" PrivateAssets="All">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.2" />
-    <PackageReference Include="Microsoft.Azure.Management.Compute.Fluent" Version="1.32.0" />
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.32.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.3" />
+    <PackageReference Include="Microsoft.Azure.Management.Compute.Fluent" Version="1.33.0" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.33.0" />
+    <PackageReference Include="Microsoft.Azure.Management.Msi.Fluent" Version="1.33.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="3.8.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\js\ts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PotekoMinecraftServerData\PotekoMinecraftServerData.csproj" />
   </ItemGroup>
 
 </Project>
