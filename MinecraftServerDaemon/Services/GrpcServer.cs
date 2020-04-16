@@ -22,6 +22,8 @@ namespace MinecraftServerDaemon.Services
         private Server _server;
         private readonly string _host;
         private readonly int _port;
+        private readonly string _rootCertificatePem;
+        private bool _enforceClientVerification;
 
         public GrpcServer(IOptions<GrpcServerInfo> grpcServerInfo,
             MinecraftServerServiceImpl minecraftServerServiceImpl,
@@ -31,6 +33,8 @@ namespace MinecraftServerDaemon.Services
             var settings = grpcServerInfo.Value;
             _host = settings.Host;
             _port = settings.Port;
+            _rootCertificatePem = settings.RootClientCertificate;
+            _enforceClientVerification = settings.Enforce;
             _minecraftServerServiceImpl = minecraftServerServiceImpl;
             _certificatePem = Encoding.UTF8.GetString(Convert.FromBase64String(settings.Certificate));
             _keyPem = Encoding.UTF8.GetString(Convert.FromBase64String(settings.Key));
@@ -38,16 +42,28 @@ namespace MinecraftServerDaemon.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            ServerCredentials cred;
+            if (_enforceClientVerification)
+            {
+                cred = new SslServerCredentials(
+                    new List<KeyCertificatePair>
+                    {
+                        new KeyCertificatePair(_certificatePem, _keyPem)
+                    }, _rootCertificatePem, SslClientCertificateRequestType.RequestAndRequireAndVerify);
+            }
+            else
+            {
+                cred = new SslServerCredentials(
+                    new List<KeyCertificatePair>
+                    {
+                        new KeyCertificatePair(_certificatePem, _keyPem)
+                    });
+            }
+
             _server = new Server
             {
                 Services = { MinecraftServerSerivce.BindService(_minecraftServerServiceImpl) },
-                Ports = { new ServerPort(_host, _port,
-                new SslServerCredentials(new List<KeyCertificatePair>
-                {
-                     new KeyCertificatePair(_certificatePem, _keyPem)
-                })
-                )
-                }
+                Ports = { new ServerPort(_host, _port, cred) }
             };
 
             try

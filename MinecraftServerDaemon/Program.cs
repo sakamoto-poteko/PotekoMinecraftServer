@@ -28,6 +28,7 @@ namespace MinecraftServerDaemon
             services.AddSingleton<MinecraftServerProcessService>();
             services.AddSingleton<MinecraftServerServiceImpl>();
             services.AddHostedService<GrpcServer>();
+            services.AddHostedService<MinecraftServerStarter>();
         }
     }
 }
