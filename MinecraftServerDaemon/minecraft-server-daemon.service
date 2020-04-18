@@ -2,14 +2,14 @@
 Description=Minecraft Daemon Service
 
 [Service]
-WorkingDirectory=/var/www/helloapp
-ExecStart=/usr/bin/dotnet /var/www/helloapp/helloapp.dll
+WorkingDirectory=DIR_TO_MC
+ExecStart=/usr/bin/dotnet DIR_TO_THIS_APP
 Restart=always
 # Restart service after 10 seconds if the dotnet service crashes:
 RestartSec=10
 KillSignal=SIGINT
-SyslogIdentifier=dotnet-example
-User=www-data
+SyslogIdentifier=minecraft-daemon
+User=DIR_TO_MC_OWNER
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 

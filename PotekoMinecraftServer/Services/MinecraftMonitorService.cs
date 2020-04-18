@@ -68,23 +68,32 @@ namespace PotekoMinecraftServer.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            _logger.LogInformation("monitor started");
+            try
             {
-                var tasks = _machines.Select(async name =>
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    if (stoppingToken.IsCancellationRequested)
-                        return;
+                    var tasks = _machines.Select(async name =>
+                    {
+                        if (stoppingToken.IsCancellationRequested)
+                            return;
 
-                    await QueryServerAsync(name);
+                        await QueryServerAsync(name);
 
-                    await CheckShutdownNeededAsync(name);
-                }).ToArray();
-                
-                await Task.WhenAll(tasks);
+                        await CheckShutdownNeededAsync(name);
+                    }).ToArray();
 
-                await BroadcastStatusAsync();
+                    await Task.WhenAll(tasks);
 
-                await Task.Delay(TimeSpan.FromSeconds(_refreshInterval), stoppingToken);
+                    await BroadcastStatusAsync();
+
+                    await Task.Delay(TimeSpan.FromSeconds(_refreshInterval), stoppingToken);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("monitor encountered exception: {message}", e.Message);
+                throw;
             }
         }
 
@@ -229,8 +238,6 @@ namespace PotekoMinecraftServer.Services
                 }
                 else
                 {
-                    s.MinecraftBdsStatus = MinecraftBdsStatus.Stopped;
-
                     SetAsNowIfIsNever(_serverStoppedFirstTimestamp, name);
                 }
             }
@@ -241,6 +248,7 @@ namespace PotekoMinecraftServer.Services
 
             _machineStatus[name] = m;
             _serverStatus[name] = s;
+            _logger.LogDebug("Status of {name} updated", name);
         }
 
         public List<string> ListServerNames()

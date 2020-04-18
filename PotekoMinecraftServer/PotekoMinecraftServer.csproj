@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\Migrations\20200416065247_Test.cs" />
+    <Compile Remove="Data\Migrations\20200416065247_Test.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Scripts\HomeIndex.ts" />
     <None Remove="Scripts\mcstatus-subscribe.ts" />
   </ItemGroup>
@@ -39,7 +44,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

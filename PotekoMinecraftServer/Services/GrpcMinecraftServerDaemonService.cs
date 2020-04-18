@@ -17,12 +17,14 @@ namespace PotekoMinecraftServer.Services
     {
         private readonly ILogger<GrpcMinecraftServerDaemonService> _logger;
         private readonly Dictionary<string, MinecraftServerSerivce.MinecraftServerSerivceClient> _clients = new Dictionary<string, MinecraftServerSerivce.MinecraftServerSerivceClient>();
+        private readonly int _daemonRequestTimeout;
 
         public GrpcMinecraftServerDaemonService(IOptions<Settings.MinecraftServer> options,
             ILogger<GrpcMinecraftServerDaemonService> logger)
         {
             _logger = logger;
             var settings = options.Value;
+            _daemonRequestTimeout = settings.DaemonRequestTimeout;
 
             foreach (var srv in settings.Endpoints)
             {
@@ -64,6 +66,11 @@ namespace PotekoMinecraftServer.Services
             return client;
         }
 
+        private DateTime GetResponseDeadline()
+        {
+            return DateTime.UtcNow.AddSeconds(_daemonRequestTimeout);
+        }
+
         private async Task<bool> DaemonOperationAsync(string name, MinecraftServerOperation operation)
         {
             try
@@ -71,7 +78,7 @@ namespace PotekoMinecraftServer.Services
                 var result = await GetClient(name).OperationAsync(new MinecraftServerOperationRequest
                 {
                     Operation = operation
-                });
+                }, deadline: GetResponseDeadline());
 
                 if (result.Completed)
                 {
@@ -94,7 +101,7 @@ namespace PotekoMinecraftServer.Services
         {
             try
             {
-                var users = await GetClient(name).ListUserAsync(new MinecraftServerListUserRequest());
+                var users = await GetClient(name).ListUserAsync(new MinecraftServerListUserRequest(), deadline: GetResponseDeadline());
                 return new OnlinePlayers
                 {
                     Max = users.Max,
@@ -117,7 +124,7 @@ namespace PotekoMinecraftServer.Services
         {
             try
             {
-                var result = await GetClient(name).GetStatusAsync(new MinecraftServerGetStatusRequest());
+                var result = await GetClient(name).GetStatusAsync(new MinecraftServerGetStatusRequest(), deadline: GetResponseDeadline());
                 return result.Status switch
                 {
                     PotekoProtos.MinecraftServerStatus.Stopped => MinecraftBdsStatus.Stopped,
@@ -128,7 +135,7 @@ namespace PotekoMinecraftServer.Services
             }
             catch (RpcException e)
             {
-                _logger.LogError($"GetStatusAsyncError for server {name}: {e.Message}");
+                _logger.LogDebug($"GetStatusAsyncError for server {name}: {e.Message}");
                 return MinecraftBdsStatus.NetworkError;
             }
         }

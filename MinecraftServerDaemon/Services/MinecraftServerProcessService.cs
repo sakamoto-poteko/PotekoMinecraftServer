@@ -182,7 +182,7 @@ namespace MinecraftServerDaemon.Services
                 {
                     _process.WaitForExit(waitTime);
                 }
-                return _process.HasExited;
+                return _process?.HasExited ?? true;
             });
         }
 

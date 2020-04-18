@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -32,13 +33,18 @@ namespace PotekoMinecraftServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<Settings.MinecraftServer>(Configuration.GetSection("MinecraftServer"));
+            services.PostConfigure<Settings.MinecraftServer>(settings=>
+            {
+                var context = new ValidationContext(settings, null, null);
+                Validator.ValidateObject(settings, context);
+            });
+
 
             services.AddSingleton<IMinecraftServerDaemonService, GrpcMinecraftServerDaemonService>();
             services.AddSingleton<IMinecraftMachineService, AzureMinecraftMachineService>();
             services.AddSingleton<MinecraftMonitorService>();
             services.AddSingleton<IMinecraftMonitorService>(sp => sp.GetService<MinecraftMonitorService>());
             services.AddHostedService(sp => sp.GetService<MinecraftMonitorService>());
-
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
@@ -85,7 +91,7 @@ namespace PotekoMinecraftServer
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
