@@ -94,7 +94,6 @@ namespace MinecraftServerDaemon.Services
         {
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
-                _logger.LogError($"[stderr]:{e.Data.Trim()}");
             }
         }
 
@@ -106,7 +105,6 @@ namespace MinecraftServerDaemon.Services
             {
                 _processOutput.Add(e.Data);
                 ProcessOutput(e.Data);
-                _logger.LogInformation($"[stdout]:{e.Data.Trim()}");
             }
         }
 
