@@ -29,24 +29,10 @@ namespace PotekoMinecraftServer.Controllers
         [Authorize]
         public async Task<IActionResult> Initialize()
         {
-            var hasRole = await _roleManager.RoleExistsAsync(UserRoles.Player);
-            if (!hasRole)
-            {
-                var result = await _roleManager.CreateAsync(new IdentityRole(UserRoles.Player));
-                if (!result.Succeeded)
-                {
-                    return View(new ResultResponse
-                    {
-                        Result = false,
-                        Message = string.Join('\n', result.Errors)
-                    });
-                }
-            }
-
             if (_userManager.Users.Count() == 1)
             {
                 var user = _userManager.Users.Single();
-                var addedToRole = await _userManager.IsInRoleAsync(user, UserRoles.Player);
+                var addedToRole = await _userManager.IsInRoleAsync(user, UserRoles.Admin);
                 if (addedToRole)
                 {
                     return View(_alreadyInitialized);
@@ -67,7 +53,7 @@ namespace PotekoMinecraftServer.Controllers
             }
         }
 
-        [Authorize(Roles = UserRoles.Player)]
+        [Authorize]
         public IActionResult ConfirmRole()
         {
             return View();
