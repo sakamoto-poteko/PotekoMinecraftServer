@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PotekoMinecraftServer.Services
+namespace PotekoMinecraftServerData.Data
 {
     public class MinecraftMachineStatus
     {

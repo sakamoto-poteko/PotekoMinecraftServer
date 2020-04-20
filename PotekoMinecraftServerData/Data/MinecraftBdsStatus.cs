@@ -1,4 +1,4 @@
-﻿namespace PotekoMinecraftServer.Services
+﻿namespace PotekoMinecraftServerData.Data
 {
     public enum MinecraftBdsStatus
     {

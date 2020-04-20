@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>dotnet-MinecraftServerDaemon-459B51BE-3E57-4DA1-9FC9-B659E3DE4FDD</UserSecretsId>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

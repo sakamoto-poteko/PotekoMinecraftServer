@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinecraftServerDaemon", "Mi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PotekoMinecraftServerData", "PotekoMinecraftServerData\PotekoMinecraftServerData.csproj", "{5073E803-CCD7-4732-AE6D-F7C545BDBF0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachineChecker", "MachineChecker\MachineChecker.csproj", "{05CF4406-F3BE-490A-AE51-36A15DAC3942}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B74A13C6-4A0B-4DC3-A2E2-3FE054D1FB0D}"
+	ProjectSection(SolutionItems) = preProject
+		DeploymentGuide.md = DeploymentGuide.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineChecker", "MachineChecker\MachineChecker.csproj", "{05CF4406-F3BE-490A-AE51-36A15DAC3942}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

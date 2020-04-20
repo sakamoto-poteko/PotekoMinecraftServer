@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PotekoMinecraftServerData.Data;
 
 namespace PotekoMinecraftServer.Models
 {
-    public class MinecraftEndpointStatusViewModel
+    public class MinecraftEndpointStatusViewModel : MinecraftEndpointStatus
     {
-        public string Name { get; set; }
-
-        public Services.MinecraftMachineStatus MachineStatus { get; set; }
-        public Services.MinecraftServerStatus ServerStatus { get; set; }
     }
 }

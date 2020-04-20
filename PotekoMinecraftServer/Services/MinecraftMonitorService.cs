@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PotekoMinecraftServer.Hubs;
 using PotekoMinecraftServer.Models;
+using PotekoMinecraftServerData.Data;
 
 namespace PotekoMinecraftServer.Services
 {
