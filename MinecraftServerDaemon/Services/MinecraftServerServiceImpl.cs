@@ -10,10 +10,10 @@ namespace MinecraftServerDaemon.Services
 {
     public class MinecraftServerServiceImpl : MinecraftServerSerivce.MinecraftServerSerivceBase
     {
-        private readonly MinecraftServerProcessService _service;
+        private readonly IMinecraftServerProcessService _service;
         private readonly ILogger<MinecraftServerServiceImpl> _logger;
 
-        public MinecraftServerServiceImpl(MinecraftServerProcessService service, ILogger<MinecraftServerServiceImpl> logger)
+        public MinecraftServerServiceImpl(IMinecraftServerProcessService service, ILogger<MinecraftServerServiceImpl> logger)
         {
             _service = service;
             _logger = logger;
@@ -24,11 +24,11 @@ namespace MinecraftServerDaemon.Services
             _logger.LogInformation("GetStatus");
             var status = _service.ServerStatus switch
             {
-                MinecraftServerProcessService.MinecraftServerStatus.Stopped => MinecraftServerStatus.Stopped,
-                MinecraftServerProcessService.MinecraftServerStatus.Starting => MinecraftServerStatus.Stopped,
-                MinecraftServerProcessService.MinecraftServerStatus.Running => MinecraftServerStatus.Running,
-                MinecraftServerProcessService.MinecraftServerStatus.Stopping => MinecraftServerStatus.Running,
-                MinecraftServerProcessService.MinecraftServerStatus.Error => MinecraftServerStatus.Error,
+                MinecraftServerStatus.Stopped => MinecraftServerStatus.Stopped,
+                MinecraftServerStatus.Starting => MinecraftServerStatus.Stopped,
+                MinecraftServerStatus.Running => MinecraftServerStatus.Running,
+                MinecraftServerStatus.Stopping => MinecraftServerStatus.Running,
+                MinecraftServerStatus.Error => MinecraftServerStatus.Error,
                 _ => throw new ArgumentOutOfRangeException(),
             };
             return Task.FromResult(new MinecraftServerGetStatusReply { Status = status });

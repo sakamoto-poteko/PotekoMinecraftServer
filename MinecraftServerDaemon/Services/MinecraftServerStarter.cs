@@ -9,9 +9,9 @@ namespace MinecraftServerDaemon.Services
 {
     public class MinecraftServerStarter : IHostedService
     {
-        private readonly MinecraftServerProcessService _service;
+        private readonly IMinecraftServerProcessService _service;
 
-        public MinecraftServerStarter(MinecraftServerProcessService service)
+        public MinecraftServerStarter(IMinecraftServerProcessService service)
         {
             _service = service;
         }

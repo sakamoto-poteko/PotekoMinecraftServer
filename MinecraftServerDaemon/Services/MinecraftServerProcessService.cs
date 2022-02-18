@@ -11,30 +11,40 @@ using MinecraftServerDaemon.Settings;
 
 namespace MinecraftServerDaemon.Services
 {
-    public class MinecraftServerProcessService
+    public enum MinecraftServerStatus
     {
-        public enum MinecraftServerStatus
-        {
-            Stopped,
-            Starting,
-            Running,
-            Stopping,
-            Error
-        }
+        Stopped,
+        Starting,
+        Running,
+        Stopping,
+        Error
+    }
 
-        public enum MinecraftServerCommand
-        {
-            Stop,
-            List,
-        }
+    public enum MinecraftServerCommand
+    {
+        Stop,
+        List,
+    }
 
+    public interface IMinecraftServerProcessService
+    {
+        public MinecraftServerStatus ServerStatus { get; }
+        public int MaxPlayers { get; }
+        public int OnlinePlayers { get; }
+
+        public bool ExecuteCommand(MinecraftServerCommand command);
+        public void Start();
+        public void Stop(bool gracefully);
+        public Task<bool> WaitForProcessExitAsync(int waitTime = -1);
+    }
+
+    public class MinecraftServerProcessService : IMinecraftServerProcessService
+    {
         private readonly ILogger<MinecraftServerProcessService> _logger;
         private Process _process;
         private readonly object _processLock = new object();
         private readonly ProcessStartInfo _startInfo;
 
-        public MinecraftServerStatus ServerStatus { get; private set; } =
-            MinecraftServerStatus.Stopped;
 
         public MinecraftServerProcessService(IOptions<MinecraftServerInfo> options, ILogger<MinecraftServerProcessService> logger)
         {
@@ -110,6 +120,7 @@ namespace MinecraftServerDaemon.Services
 
         public int MaxPlayers { get; private set; }
         public int OnlinePlayers { get; private set; }
+        public MinecraftServerStatus ServerStatus { get; private set; } = MinecraftServerStatus.Stopped;
 
         private const string RegexStrPlayersOnline = @"There are (?<online>\d+)/(?<max>\d+) players online:";
         private static readonly Regex RegexPlayersOnline = new Regex(RegexStrPlayersOnline, RegexOptions.Compiled);
@@ -218,5 +229,6 @@ namespace MinecraftServerDaemon.Services
         {
             CheckPlayers();
         }
+
     }
 }

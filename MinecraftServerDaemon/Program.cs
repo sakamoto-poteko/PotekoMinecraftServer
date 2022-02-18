@@ -25,7 +25,7 @@ namespace MinecraftServerDaemon
             services.Configure<Settings.MinecraftServerInfo>(configuration.GetSection("MinecraftServerInfo"));
             services.Configure<Settings.GrpcServerInfo>(configuration.GetSection("GrpcServerInfo"));
 
-            services.AddSingleton<MinecraftServerProcessService>();
+            services.AddSingleton<IMinecraftServerProcessService, MinecraftServerProcessService>();
             services.AddSingleton<MinecraftServerServiceImpl>();
             services.AddHostedService<GrpcServer>();
             services.AddHostedService<MinecraftServerStarter>();
